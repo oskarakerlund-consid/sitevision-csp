@@ -22,44 +22,52 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+});
 
-  // Handle pagination for search facets
+// Helper method to modify ajax responses
+const modifyXhrResponse = (callback) => {
+  const originalGet = Object.getOwnPropertyDescriptor(
+    XMLHttpRequest.prototype,
+    "responseText"
+  ).get;
+  Object.defineProperty(XMLHttpRequest.prototype, "responseText", {
+    get: function () {
+      return callback(originalGet.apply(this, arguments));
+    },
+  });
+};
+
+// Handle pagination for search facets
+modifyXhrResponse((content) => {
   const searchFacetedPortlet = document.querySelector(
     ".sv-facetedsearch-portlet"
   );
-  if (searchFacetedPortlet) {
-    $svjq.ajaxSetup({
-      dataFilter: (content) => {
-        const regexpPaginationScript =
-          /<script[^>]+>\s+svDocReady\(function\(\) {\s+\$svjq\('([^']+)'\)\.pagination\(([\d\D]+?)\);\s+}\);\s+<\/script>/;
-        const match = content.match(regexpPaginationScript);
-        if (match) {
-          const paginationSelector = match[1];
-          let paginationOptions = match[2];
-          // Add quote marks around keys
-          paginationOptions = paginationOptions.replace(/\s(\w+):/gm, `"$1":`);
-          // Replace ' with " for values
-          paginationOptions = paginationOptions.replace(
-            /'/g,
-            `"`,
-            paginationOptions
-          );
+  if (!searchFacetedPortlet) {
+    return content;
+  }
+  const regexpPaginationScript =
+    /<script[^>]+>\s+svDocReady\(function\(\) {\s+\$svjq\('([^']+)'\)\.pagination\(([\d\D]+?)\);\s+}\);\s+<\/script>/;
+  const match = content.match(regexpPaginationScript);
+  if (match) {
+    const paginationSelector = match[1];
+    let paginationOptions = match[2];
+    // Add quote marks around keys
+    paginationOptions = paginationOptions.replace(/\s(\w+):/gm, `"$1":`);
+    // Replace ' with " for values
+    paginationOptions = paginationOptions.replace(/'/g, `"`, paginationOptions);
 
-          // Remove script from ajax content
-          content = content.replace(match[0], "");
+    // Remove script from ajax content
+    content = content.replace(match[0], "");
 
-          // Run pagination script after content is loaded
-          const observer = new MutationObserver((mutationList, observer) => {
-            $svjq(paginationSelector).pagination(JSON.parse(paginationOptions));
-            observer.disconnect();
-          });
-          observer.observe(searchFacetedPortlet, {
-            childList: true,
-            subtree: true,
-          });
-        }
-        return content;
-      },
+    // Run pagination script after content is loaded
+    const observer = new MutationObserver((mutationList, observer) => {
+      $svjq(paginationSelector).pagination(JSON.parse(paginationOptions));
+      observer.disconnect();
+    });
+    observer.observe(searchFacetedPortlet, {
+      childList: true,
+      subtree: true,
     });
   }
+  return content;
 });
