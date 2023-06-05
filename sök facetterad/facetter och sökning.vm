@@ -26,9 +26,10 @@
          <li class="$selectedFacetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item" tabindex="0" style="margin-bottom:${facetItemSpacing}${selectedFacetBgColor}">
             $endecUtil.escapeXML($customSort.name)
          #else
-         <li class="$facetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item sv-search-facet-item-selected" style="margin-bottom:${facetItemSpacing}">
-            #set ($ajaxSortClick = $updateResultFunctionName + '("' + $customSort.sortQueryParams + '",true); return false;')
-            $facetLinkRenderer.setOnclick("$ajaxSortClick")
+         <li class="$facetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item sv-search-facet-item-selected"
+            style="margin-bottom:${facetItemSpacing}">
+            $facetLinkRenderer.addDataAttribute("facet-function", $updateResultFunctionName)
+            $facetLinkRenderer.addDataAttribute("facet-params", $customSort.sortQueryParams)
             $facetLinkRenderer.setStringTarget($customSort.sortURL)
             $facetLinkRenderer.setText($customSort.name)
             $facetLinkRenderer.render()
@@ -55,8 +56,10 @@
                #else
                <li class="$facetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item" style="margin-bottom:${facetItemSpacing}">
                #end
-                  #set ($ajaxFacetClick = $updateResultFunctionName + '("' + $facetValue.filterQueryParams + '",true); return false;')
-                  $facetLinkRenderer.setOnclick("$ajaxFacetClick")
+                  ## #set ($ajaxFacetClick = $updateResultFunctionName + '("' + $facetValue.filterQueryParams + '",true); return false;')
+                  ## $facetLinkRenderer.setOnclick("$ajaxFacetClick")
+                  $facetLinkRenderer.addDataAttribute("facet-function", $updateResultFunctionName)
+                  $facetLinkRenderer.addDataAttribute("facet-params", $facetValue.filterQueryParams)
                   $facetLinkRenderer.setStringTarget($facetValue.filterURL)
                   $facetLinkRenderer.setText($facetValue.name)
                   $facetLinkRenderer.render() $facetValue.count

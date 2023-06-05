@@ -32,3 +32,13 @@ var scrollDiv = $(
 var css = ".emoji-picker {\n  margin: 0 0.5em;\n ...n}";
 styleInject(css);
 ```
+
+## Sök facetterad
+
+Som standard används här `linkRenderer.setOnclick` i velocity vilket infogar nya `<script>`-taggar med ajaxsvaret. Dessa taggar har ett nytt nonce-värde som inte matchar sidan som laddar dem, och därmed nekas scripten. Vi behöver kommentera bort `setOnclick` och lyssna på länkarna från sidan som laddar innehållet istället.
+
+För facetterna infogas det script-taggar som lyssnar på klick och kör sedan `funktionsnamn` med `funktionsparameter`. Dessa två värden sätter vi som data-attribut på länkarna istället och lyssnar på dem utifrån. Därefter kör vi dem via `window` för att undvika `eval()`.
+
+På varje sökresultat finns spårning av klick (clickTrackingCallback) som laddar en script-tagg som gör ett nytt ajax-anrop med jquery. Här kan vi lägga javascriptet i ett data-attribut på länken och därefter lyssna utifrån på klick. Då kan vi extrahera URL från data-attributet och göra ett eget anrop dit.
+
+Pagineringen fungerar genom ett script som byggs i Velocity från en mall vi inte kommer åt. Vi kan dock fånga upp ett ajaxsvar med `dataFilter` innan det injiceras på sidan. Där plockar vi bort script-taggen och parsar ut JSON-objektet och kör pagineringsccriptet själva, efter att innehållet laddats in. Det finns en risk att detta slutar fungera om `dataFilter` ersätts någon annansstans.
