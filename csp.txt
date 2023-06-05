@@ -1,2 +1,3 @@
 default-src 'self';
 script-src 'self' <NONCE> 'unsafe-eval';
+style-src 'self' 'unsafe-inline';

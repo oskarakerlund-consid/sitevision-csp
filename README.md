@@ -15,3 +15,20 @@ at Module.<anonymous> (contactSearch.js:24:18)
 at s (portlets-social.js:1:395)
 */
 ```
+
+`style-src` behöver ha `unsafe-inline` eftersom inline styling är vanligt förekommande (inte bara i Velocitymallar). Se exempel:
+
+**webpack:///src/social/util/MessageClient/messageClient.js** (via portlets-social.js)
+
+```js
+var scrollDiv = $(
+  '<div style="width:100px;height:100px;overflow:scroll;position:absolute;top:-9999em;" />'
+)[0];
+```
+
+**webpack:///src/vendor/emoji/emoji.js** (via portlets-social.js)
+
+```js
+var css = ".emoji-picker {\n  margin: 0 0.5em;\n ...n}";
+styleInject(css);
+```
