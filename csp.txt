@@ -1,1 +1,2 @@
-default-src 'self' <NONCE>;
+default-src 'self';
+script-src 'self' <NONCE> 'unsafe-eval';
