@@ -1,0 +1,202 @@
+##
+## Utility API
+#set ($propertyUtil = $sitevisionUtils.propertyUtil)
+#set ($outputUtil = $sitevisionUtils.outputUtil)
+#set ($portletContextUtil = $sitevisionUtils.portletContextUtil)
+#set ($resourceLocatorUtil = $sitevisionUtils.resourceLocatorUtil)
+#set ($scriptUtil = $sitevisionUtils.scriptUtil)
+#set ($endecUtil = $sitevisionUtils.endecUtil)
+#set ($dateUtil = $sitevisionUtils.dateUtil)
+
+##
+## Portlet properties
+#set ($bundle = $propertyUtil.getNode($portlet, 'bundle'))
+#set ($headingNode = $propertyUtil.getNode($portlet, 'searchHitHeadingFont'))
+#set ($headingClass = $propertyUtil.getString($headingNode, 'selectorText'))
+#set ($excerptClass = $propertyUtil.getNestedString($portlet, 'searchHitExcerptFont', 'selectorText'))
+#set ($infoClass = $propertyUtil.getNestedString($portlet, 'searchHitInfoFont', 'selectorText'))
+#set ($excerptLength = $propertyUtil.getInt($portlet, 'searchHitExcerptLength', 250))
+#set ($showSearchHitInfo = $propertyUtil.getBoolean($portlet, 'showSearchHitInfo'))
+#set ($showSearchHitPath = $propertyUtil.getBoolean($portlet, 'showSearchHitPath'))
+#set ($headingField = $propertyUtil.getString($portlet, 'headingField'))
+
+##
+## Index field names
+#set ($displayField = $propertyUtil.getString($portlet, $headingField))
+#set ($urlField = $propertyUtil.getString($portlet, 'urlField'))
+#set ($uriField = $propertyUtil.getString($portlet, 'uriField'))
+#set ($siteField = $propertyUtil.getString($portlet, 'siteField'))
+#set ($summaryField = $propertyUtil.getString($portlet, 'summaryField'))
+#set ($lastUpdatedField = $propertyUtil.getString($portlet, 'lastPublishedField'))
+#set ($sizeField = $propertyUtil.getString($portlet, 'sizeField'))
+#set ($mimtypeField = $propertyUtil.getString($portlet, 'mimetypeField'))
+
+#set ($thisSiteId = $resourceLocatorUtil.site.identifier)
+#if ($thisSiteId.endsWith('_site'))
+   #set ($idEnd = $thisSiteId.length() - 5)
+   #set ($thisSiteId = $thisSiteId.substring(0, $idEnd))
+#end
+
+## Init background coloring and left padding for list item
+#if ($propertyUtil.getBoolean($portlet, 'useSearchHitBackgroundColor'))
+   #set ($colorNode = $propertyUtil.getNode($portlet, 'searchHitBackgroundColor'))
+   #set ($flipColors = "true")
+   #set ($oddColor = "; background-color:${propertyUtil.getString($colorNode, 'htmlHexValue')}")
+   #set ($bgColor = $oddColor)
+   #set ($itemLeftPadding = '0.5em')
+#else
+   #set ($bgColor = '')
+   #set ($itemLeftPadding = '0')
+#end
+
+## Init count start
+#set ($hitCountStart = $propertyUtil.getInt($portlet, 'startAtHit', 0))
+#set ($displayHitNumbering = $propertyUtil.getBoolean($portlet, 'showSearchHitNumbering', false))
+#set ($listStart = $hitCountStart + 1)
+#if ($docTypeUtil)
+   #set ($startIsValid = !$docTypeUtil.isXhtmlStrict())
+#else
+   #set ($docTypeUtil = $sitevisionUtils.docTypeUtil)
+   #set ($startIsValid = !$docTypeUtil.isXhtmlStrict())
+#end
+
+## Init link+icon renderers and counter class
+#set ($linkRenderer = $sitevisionUtils.linkRenderer)
+#set ($linkRendererClass = $headingClass)
+#set ($counterClass = $headingClass)
+#set ($renderIcons = $propertyUtil.getBoolean($portlet, 'showFileIcons', false))
+#if ($renderIcons)
+   #set ($iconRenderer = $sitevisionUtils.fileIconRenderer)
+   $iconRenderer.clearUseSmallIcons()
+   #set ($renderIcons = $iconRenderer.loadDefaultIconByFileExtension('default'))
+   #if ($renderIcons)
+      $iconRenderer.setFontClass('sv-noborder-vamiddle')
+      $linkRenderer.clearUseResourceDecorationSettings()
+      #set ($linkRendererClass = $linkRendererClass + ' sv-vamiddle')
+      #set ($counterClass = $counterClass + ' sv-vamiddle')
+   #end
+#end
+$linkRenderer.setFontClass($linkRendererClass)
+
+#set ($datePattern = $dateUtil.getEditorFormatPattern(${portletContextUtil.currentLocale}))
+#set ($itemSpacing = '0.5em')
+
+##
+## NOTE! This div is potentially updated via AJAX by the pagination script
+#set ($isAjaxPagingResult = $propertyUtil.getBoolean($portlet, 'isRenderingAjaxPagingResult'))
+#if (!$isAjaxPagingResult)
+<div class="$hitsDivClass" aria-live="polite">
+#end
+
+##
+## Render facets and custom sorting
+#if ($propertyUtil.getBoolean($portlet, 'hasFacetsToRender') || $propertyUtil.getBoolean($portlet, 'hasCustomSortsToRender'))
+   #set ($facetsAndSortingTemplate = $propertyUtil.getNestedString($portlet, 'templates', 'facetsTemplate'))
+   $velocityEvaluator.evaluate($facetsAndSortingTemplate)
+#end
+#set ($searchInputId = $portletContextUtil.getPortletNamespace('search') + '_facetSearch')
+
+##
+## Render hits
+<div id="$searchInputId">
+<ol #if($startIsValid) start="$listStart"#end class="sv-search-result" style="margin-left:0; padding-left:0; margin-top:0.7em; list-style-type:none">
+   #foreach ($hit in $searchResult.hits)
+   <li class="sv-search-hit sv-corner-all" style="margin-left:0; padding-left:${itemLeftPadding}; padding-top:0.5em; padding-bottom:0.5em${bgColor}">
+      ##
+      ## Heading
+      #set ($hitHeading = $scriptUtil.getNonNull($hit.getField($displayField)))
+      #if ($hitHeading)
+      <div class="sv-notopmargin" aria-live="polite" tabindex="0">
+         #if ($displayHitNumbering)
+            #set ($counter = $hitCountStart + $velocityCount)
+         #end
+         #set ($target = $scriptUtil.getNonNull($hit.getField($urlField)))
+         #if ($target)
+            #if ($thisSiteId == $hit.getField($siteField))
+               #set ($target = $scriptUtil.getNonNull($hit.getField($uriField), $target))
+            #end
+            $linkRenderer.setStringTarget($target)
+            $linkRenderer.setOnclick($hit.clickTrackingCallback)
+            $linkRenderer.setText($hitHeading)
+            #if ($renderIcons)
+               $scriptUtil.swallow($iconRenderer.loadIconByContentType($hit.getField($mimtypeField)))
+               $iconRenderer.render()
+            #end
+            #if ($displayHitNumbering)
+               <span class="$counterClass">${counter}.</span>
+            #end
+            $linkRenderer.render()
+         #else
+            #if ($displayHitNumbering)
+               <span class="$counterClass">${counter}.</span>
+            #end
+            $outputUtil.getEscapedHtmlText($hitHeading, $headingNode)
+         #end
+      </div>
+      #end
+
+      ##
+      ## Summary (could be highlighted)
+      #set ($summaryFieldValue = $scriptUtil.getNonNull(${hit.getHighlightedField($summaryField, $excerptLength)}))
+      #if ($summaryFieldValue)
+         <p class="$excerptClass" style="margin-top:${itemSpacing}">$summaryFieldValue</p>
+      #end
+
+      #set ($infoText = '')
+      #if ($showSearchHitInfo)
+         #if ($hit.getDateField($lastUpdatedField))
+            #set ($modifiedDate = $hit.getDateField($lastUpdatedField))
+            #set ($infoText = $propertyUtil.getString($bundle, 'lastModifiedText') + ' ' + $dateUtil.getDateAsString($datePattern, $modifiedDate))
+         #end
+
+         #if ($hit.getLongField($sizeField))
+            #set ($longSize = $hit.getLongField($sizeField))
+            #set ($humanSize = $scriptUtil.getHumanPresentableSize($longSize))
+            #if ($infoText != '')
+               #set ($infoText = $infoText + ' &bull; ' + $propertyUtil.getString($bundle, 'sizeText') + ' ' + $humanSize)
+            #else
+               #set ($infoText = $propertyUtil.getString($bundle, 'sizeText') + ' ' + $humanSize)
+            #end
+         #end
+      #end
+
+      #set ($pathText = '')
+      #if ($showSearchHitPath)
+         #if ($hit.node)
+            #if ($pathLinkRenderer)
+               ## Do nothing, renderer and path class already created!
+            #else
+               #set ($pathLinkRenderer = $sitevisionUtils.linkRenderer)
+               $pathLinkRenderer.forceUseCrossSiteTargetChecking()
+               $pathLinkRenderer.clearUseLinkDecorationSettings()
+               #set ($pathClass = $propertyUtil.getNestedString($portlet, 'searchHitPathFont', 'selectorText'))
+            #end
+            #set ($pathText = $outputUtil.renderWebPathNodes($hit.node, $pathLinkRenderer, ' / '))
+         #end
+      #end
+
+      #if ($infoText != '' && $pathText != '')
+         <div style="margin-top:${itemSpacing}">
+            <span class="$infoClass">$infoText</span><br />
+            <span class="$pathClass">$pathText</span>
+         </div>
+      #elseif ($infoText != '')
+         <p class="$infoClass" style="margin-top:${itemSpacing}">$infoText</p>
+      #elseif ($pathText != '')
+         <p class="$pathClass" style="margin-top:${itemSpacing}">$pathText</p>
+      #end
+   </li>
+   #if ($flipColors)
+      #if ($bgColor == '')
+        #set ($bgColor = $oddColor)
+      #else
+        #set ($bgColor = '')
+      #end
+   #end
+#end
+</ol>
+</div>
+
+#if (!$isAjaxPagingResult)
+</div>
+#end

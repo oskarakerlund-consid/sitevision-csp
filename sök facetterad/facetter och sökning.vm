@@ -1,0 +1,82 @@
+#set ($facetsBgColor = $propertyUtil.getNestedString($portlet, 'facetsBackgroundColor', 'htmlHexValue', ''))
+#if ($facetsBgColor != '')
+   #set ($facetsBgColor = '; background-color:' + $facetsBgColor)
+#end
+#set ($selectedFacetBgColor = $propertyUtil.getNestedString($portlet, 'selectedFacetValueBackgroundColor', 'htmlHexValue', ''))
+#if ($selectedFacetBgColor != '')
+   #set ($selectedFacetBgColor = '; background-color:' + $selectedFacetBgColor)
+#end
+#set ($facetNameClass = $propertyUtil.getNestedString($portlet, 'facetNameFont', 'selectorText'))
+#set ($facetValueClass = $propertyUtil.getNestedString($portlet, 'facetValueFont', 'selectorText'))
+#set ($selectedFacetValueClass = $propertyUtil.getNestedString($portlet, 'selectedFacetValueFont', 'selectorText'))
+#set ($hideEmptyFacetValue = $propertyUtil.getBoolean($portlet, 'hideEmptyFacetValue'))
+#set ($updateResultFunctionName = $propertyUtil.getString($portlet, 'updateResultFunctionName'))
+#set ($facetLinkRenderer = $sitevisionUtils.linkRenderer)
+#set ($searchInputId = $portletContextUtil.getPortletNamespace('search') + '_facetSearch')
+#set ($infoText = $propertyUtil.getNestedString($portlet, 'bundle', 'searchFacets'))
+
+<div class="sv-search-facets" style="float:right; padding:0 0.7em${facetsBgColor}" role="navigation" aria-controls="$searchInputId" aria-label="$infoText">
+#set ($facetItemSpacing = '0.5em')
+#if ($searchResult.customSorts)
+   <div style="margin-bottom:2em" class="sv-search-facet">
+      <p class="$facetNameClass sv-search-facet-name" tabindex="0" style="margin-bottom:${facetItemSpacing}">$propertyUtil.getNestedString($portlet, 'bundle', 'sortText')</p>
+      <ul class="sv-defaultlist-noleft sv-notopmargin sv-search-facet-items">
+      #foreach ($customSort in $searchResult.customSorts)
+         #if ($customSort.isSelected())
+         <li class="$selectedFacetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item" tabindex="0" style="margin-bottom:${facetItemSpacing}${selectedFacetBgColor}">
+            $endecUtil.escapeXML($customSort.name)
+         #else
+         <li class="$facetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item sv-search-facet-item-selected" style="margin-bottom:${facetItemSpacing}">
+            #set ($ajaxSortClick = $updateResultFunctionName + '("' + $customSort.sortQueryParams + '",true); return false;')
+            $facetLinkRenderer.setOnclick("$ajaxSortClick")
+            $facetLinkRenderer.setStringTarget($customSort.sortURL)
+            $facetLinkRenderer.setText($customSort.name)
+            $facetLinkRenderer.render()
+         #end
+         </li>
+      #end
+      </ul>
+   </div>
+#end
+#if ($searchResult.facetFields)
+   #foreach ($facetField in $searchResult.facetFields)
+   <div style="margin-bottom:2em" class="sv-search-facet">
+      #set ($firstValueForField = true)
+      #foreach ($facetValue in $facetField.facetValues)
+         #if ($scriptUtil.isNotBlank(${facetValue.name}))
+            #if ($facetValue.count > 0)
+               #if ($firstValueForField)
+                  <p class="$facetNameClass sv-search-facet-name" tabindex="0" style="margin-bottom:${facetItemSpacing}">$endecUtil.escapeXML($facetField.name)</p>
+                  <ul class="sv-defaultlist-noleft sv-notopmargin sv-search-facet-items">
+                  #set ($firstValueForField = false)
+               #end
+               #if ($facetValue.isSelected())
+               <li class="$selectedFacetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item sv-search-facet-item-selected" style="margin-bottom:${facetItemSpacing}${selectedFacetBgColor}">
+               #else
+               <li class="$facetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item" style="margin-bottom:${facetItemSpacing}">
+               #end
+                  #set ($ajaxFacetClick = $updateResultFunctionName + '("' + $facetValue.filterQueryParams + '",true); return false;')
+                  $facetLinkRenderer.setOnclick("$ajaxFacetClick")
+                  $facetLinkRenderer.setStringTarget($facetValue.filterURL)
+                  $facetLinkRenderer.setText($facetValue.name)
+                  $facetLinkRenderer.render() $facetValue.count
+               </li>
+            #elseif (!$hideEmptyFacetValue)
+               #if ($firstValueForField)
+                  <p class="$facetNameClass sv-search-facet-name" tabindex="0" style="margin-bottom:${facetItemSpacing}">$endecUtil.escapeXML($facetField.name)</p>
+                  <ul class="sv-defaultlist-noleft sv-notopmargin sv-search-facet-items">
+                  #set ($firstValueForField = false)
+               #end
+               <li class="$facetValueClass env-m-left--0 env-p-left--0 sv-search-facet-item" tabindex="0" style="margin-bottom:${facetItemSpacing}">
+                  $endecUtil.escapeXML($facetValue.name) $facetValue.count
+               </li>
+            #end
+         #end
+      #end
+      #if (!$firstValueForField)
+         </ul>
+      #end
+   </div>
+   #end
+#end
+</div>
