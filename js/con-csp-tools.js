@@ -40,7 +40,7 @@ const modifyXhrResponse = (callback) => {
 // Handle pagination for search facets
 modifyXhrResponse((content) => {
   const searchFacetedPortlet = document.querySelector(
-    ".sv-facetedsearch-portlet"
+    ".sv-facetedsearch-portlet, .sv-standardsearch-portlet"
   );
   if (!searchFacetedPortlet) {
     return content;
