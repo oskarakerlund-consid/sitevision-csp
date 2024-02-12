@@ -2,3 +2,4 @@ default-src 'self';
 script-src 'self' <NONCE> 'unsafe-eval';
 style-src 'self' 'unsafe-inline';
 frame-ancestors 'none';
+form-action 'self';
